@@ -16,6 +16,9 @@ public:
     {
     }
 
+    // void cannyEdge(cv::Mat &image, cv::Mat &cannyImage) const;
+    // void findContours(cv::Mat &image, std::vector<std::vector<cv::Point>> &contours) const;
+
     // Getters
     inline int32_t getFormat() const { return m_format; };
     inline bool getVerbose() const { return m_verbose; };
