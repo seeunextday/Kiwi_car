@@ -89,7 +89,7 @@ int32_t main(int32_t argc, char **argv)
     
 
     cv::Mat grayimg;
-    std::vector<cv::Vec3f> circles; //circle coords (x, y, raduis) floats
+    std::vector<cv::Vec3f> circles; //circle coords (x, y, radius) floats
 
     ////Uncomment is canny is wanted istead of rgb
     // cv::Mat cannyimg;
@@ -120,7 +120,7 @@ int32_t main(int32_t argc, char **argv)
 
       // change image to grayscale, needed for HoughCircles
       cv::cvtColor(img, grayimg, cv::COLOR_BGR2GRAY);
-      std::cout << "image size: " << grayimg.cols << std::endl;
+      // std::cout << "image size: " << grayimg.cols << std::endl;
 
       // tutorial said to blur to avoid extra circles, not sure if needed
       //cv::medianBlur(gray, gray, 5);
@@ -128,6 +128,24 @@ int32_t main(int32_t argc, char **argv)
 
       kiwiDetector.houghCircles(grayimg, circles);
       //std::cout << "nr of circles detected: " << circles.size() << std::endl;
+
+      // find distance between x-coords of circle centers
+      std::vector<cv::Point> centers;
+      
+      if(circles.size() > 1){
+        for( size_t i = 0; i < circles.size(); i++ ){
+          centers = cv::Point(cvRound(circles[i][0]), cvRound(circles[i][1]));
+          //centers[i] = center;
+          // cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+          // std::cout << "circle center: " << center << std::endl;
+          
+          if(i > 0){
+            // uint32_t centerDistance = cv::abs(centers[i-1].x - centers[i].x);
+            // std::cout << "nr of circles detected: " << circles.size() << std::endl;
+            // std::cout << "distance circle centers: " << centerDistance << std::endl;
+          }
+        }
+      }
 
       // draw the circles
       for( size_t i = 0; i < circles.size(); i++ )
