@@ -29,19 +29,23 @@
 //   cv::findContours(image, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
 // }
 
+void KiwiDetector::houghCircles(cv::Mat &grayscale, std::vector<cv::Vec3f> &circles) const
+{
+  // cv::HoughCircles(grayscale, circles, cv::HOUGH_GRADIENT, 1, gray.rows/100, 50, 30, 0, 20);
+  
+  cv::HoughCircles(grayscale, circles, cv::HOUGH_GRADIENT, m_dp, m_minDist, m_cannyThreshold, m_accumulatorThreshold, m_minRadius, m_maxRadius);
+
+}
+
 
 int32_t main(int32_t argc, char **argv)
 {
   auto cmd = cluon::getCommandlineArguments(argc, argv);
   if ((0 == cmd.count("cid")) || (0 == cmd.count("name")) ||
-      (0 == cmd.count("width")) || (0 == cmd.count("height")))
-  // if ((0 == cmd.count("cid")) || (0 == cmd.count("name")) ||
-  //     (0 == cmd.count("width")) || (0 == cmd.count("height")) ||
-  //     (0 == cmd.count("hue-low")) || (0 == cmd.count("hue-high")) ||
-  //     (0 == cmd.count("saturation-low")) || (0 == cmd.count("saturation-high")) ||
-  //     (0 == cmd.count("value-low")) || (0 == cmd.count("value-high")) ||
-  //     (0 == cmd.count("property")) ||
-  //     (0 == cmd.count("dilations")) || (0 == cmd.count("erosions")))
+      (0 == cmd.count("width")) || (0 == cmd.count("height")) ||
+      (0 == cmd.count("dp")) || (0 == cmd.count("minDist")) ||
+      (0 == cmd.count("cannyThreshold")) || (0 == cmd.count("accumulatorThreshold")) ||
+      (0 == cmd.count("minRadius")) || (0 == cmd.count("maxRadius")))
   {
     std::cout << argv[0]
               << " attaches to a shared memory area containing an ARGB image."
@@ -61,10 +65,8 @@ int32_t main(int32_t argc, char **argv)
     return 1;
   }
 
-  
-  KiwiDetector kiwiDetector(cmd);
-
   // Construct detector
+  KiwiDetector kiwiDetector(cmd);
   int32_t const format{kiwiDetector.getFormat()};
   uint32_t const width{kiwiDetector.getWidth()};
   uint32_t const height{kiwiDetector.getHeight()};
@@ -84,6 +86,14 @@ int32_t main(int32_t argc, char **argv)
     // std::vector<std::vector<cv::Point>> contours;
     //std::vector<cv::Point> middlePointsOfContours;
     //cv::Scalar contourColor(0, 0, 255);
+    
+
+    cv::Mat grayimg;
+    std::vector<cv::Vec3f> circles; //circle coords (x, y, raduis) floats
+
+    ////Uncomment is canny is wanted istead of rgb
+    // cv::Mat cannyimg;
+    // cv::Mat cannyImage;
 
 
     // Endless loop; end the program by pressing Ctrl-C.
@@ -103,37 +113,38 @@ int32_t main(int32_t argc, char **argv)
       }
       sharedMemory->unlock();
 
-      // // Canny edge detection
-      // kiwiDetector.cannyEdge(img, cannyImg);
+      // copy to be used for canny edge, comment if rgb is wanted
+      //img.copyTo(cannyimg);
+      // // Canny edge detection, uncomment if rgb is wanted
+      //cv::Canny(cannyimg, cannyImage, 100, 200, 3);
 
-      // // find contours
-      // kiwiDetector.findContours(cannyImg, contours)
-      
-      // cv::imshow("Canny edges ", canny);
+      // change image to grayscale, needed for HoughCircles
+      cv::cvtColor(img, grayimg, cv::COLOR_BGR2GRAY);
+      std::cout << "image size: " << grayimg.cols << std::endl;
 
-        cv::Mat gray;
-        cv::cvtColor(img, gray, cv::COLOR_BGR2GRAY);
-        //cv::medianBlur(gray, gray, 5);
+      // tutorial said to blur to avoid extra circles, not sure if needed
+      //cv::medianBlur(gray, gray, 5);
 
-        std::vector<cv::Vec3f> circles; //circles are in (x, y, raduis) coordinates
-        cv::HoughCircles(gray, circles, cv::HOUGH_GRADIENT, 1, gray.rows/100,50, 30, 0, 20);
-        for( size_t i = 0; i < circles.size(); i++ )
-        {
-            cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-            int radius = cvRound(circles[i][2]);
-            // draw the circle center
-            cv::circle( img, center, 3, cv::Scalar(0,255,0), -1, 8, 0 );
-            // draw the circle outline
-            cv::circle( img, center, radius, cv::Scalar(0,0,255), 3, 8, 0 );
-        }
+
+      kiwiDetector.houghCircles(grayimg, circles);
+      //std::cout << "nr of circles detected: " << circles.size() << std::endl;
+
+      // draw the circles
+      for( size_t i = 0; i < circles.size(); i++ )
+      {
+          cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
+          int radius = cvRound(circles[i][2]);
+          // draw the circle center
+          cv::circle( img, center, 3, cv::Scalar(0,255,0), -1, 8, 0 );
+          // draw the circle outline
+          cv::circle( img, center, radius, cv::Scalar(0,0,255), 3, 8, 0 );
+      }
+      if (kiwiDetector.getVerbose())
+      {
         cv::namedWindow( "circles", 1 );
         cv::imshow( "circles", img );
-        if (kiwiDetector.getVerbose())
-        {
-          cv::namedWindow( "circles", 1 );
-          cv::imshow( "circles", img );
-          cv::waitKey(1);
-        }
+        cv::waitKey(1);
+      }
 
     }
   }
