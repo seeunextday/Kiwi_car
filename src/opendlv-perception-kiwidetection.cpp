@@ -16,19 +16,6 @@
 
 #include "opendlv-perception-kiwidetection.h"
 
-// void KiwiDetector::cannyEdge(cv::Mat &image, cv::Mat &cannyImage) const
-// {
-//   // treshold vals need tuning
-//   cv::Canny(image, cannyImage, 150, 200, 3);
-//   cv::Mat dilatedImage;
-// }
-
-// void KiwiDetector::findContours(cv::Mat &image, std::vector<std::vector<cv::Point>> &contours) const
-// {
-//   std::vector<cv::Vec4i> hierarchy;
-//   cv::findContours(image, contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE);
-// }
-
 void KiwiDetector::houghCircles(cv::Mat &grayscale, std::vector<cv::Vec3f> &circles) const
 {
   // cv::HoughCircles(grayscale, circles, cv::HOUGH_GRADIENT, 1, gray.rows/100, 50, 30, 0, 20);
@@ -94,21 +81,13 @@ int32_t main(int32_t argc, char **argv)
     // Interface to a running OD4 session; here, you can send and receive messages.
     cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(cmd["cid"]))};
 
-    // cv::Mat cannyImg;
-    // std::vector<std::vector<cv::Point>> contours;
-    //std::vector<cv::Point> middlePointsOfContours;
-    //cv::Scalar contourColor(0, 0, 255);
-    
-
     cv::Mat grayimg;
     std::vector<cv::Vec3f> circles; //circle coords (x, y, radius) floats
 
-    ////Uncomment is canny is wanted istead of rgb
-    // cv::Mat cannyimg;
-    // cv::Mat cannyImage;
-
-
     // Endless loop; end the program by pressing Ctrl-C.
+    // TODO: move towards circle coodinates
+    // TODO: add counter for frames, i.e if x frames without circles = car lost
+    // TODO: if circles are moving sideways, follow
     while (od4.isRunning())
     {
       cv::Mat img;
@@ -125,14 +104,9 @@ int32_t main(int32_t argc, char **argv)
       }
       sharedMemory->unlock();
 
-      // copy to be used for canny edge, comment if rgb is wanted
-      //img.copyTo(cannyimg);
-      // // Canny edge detection, uncomment if rgb is wanted
-      //cv::Canny(cannyimg, cannyImage, 100, 200, 3);
-
       // change image to grayscale, needed for HoughCircles
       cv::cvtColor(img, grayimg, cv::COLOR_BGR2GRAY);
-      // std::cout << "image size: " << grayimg.cols << std::endl;
+      // std::cout << "image width: " << grayimg.cols << std::endl;
 
       // tutorial said to blur to avoid extra circles, not sure if needed
       //cv::medianBlur(gray, gray, 5);
@@ -141,22 +115,6 @@ int32_t main(int32_t argc, char **argv)
       kiwiDetector.houghCircles(grayimg, circles);
       //std::cout << "nr of circles detected: " << circles.size() << std::endl;
 
-      // find distance between x-coords of circle centers
-      std::vector<cv::Point> centers;
-      
-      if(circles.size() > 1){
-        for( size_t i = 0; i < circles.size(); i++ ){
-          centers = cv::Point(cvRound(circles[i][0]), cvRound(circles[i][1]));
-          //centers[i] = center;
-          // cv::Point center(cvRound(circles[i][0]), cvRound(circles[i][1]));
-          // std::cout << "circle center: " << center << std::endl;
-          
-          if(i > 0){
-            // uint32_t centerDistance = cv::abs(centers[i-1].x - centers[i].x);
-            // std::cout << "nr of circles detected: " << circles.size() << std::endl;
-            // std::cout << "distance circle centers: " << centerDistance << std::endl;
-          }
-        }
       }
       for (const auto &circle : circles) {
             cv::Point center(cvRound(circle[0]), cvRound(circle[1]));
