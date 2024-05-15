@@ -37,6 +37,18 @@ void KiwiDetector::houghCircles(cv::Mat &grayscale, std::vector<cv::Vec3f> &circ
 
 }
 
+void followTarget(const cv::Point &center, int radius, cluon::OD4Session &od4) {
+    float steeringAngle = (center.x - 320) * 0.005; // Assuming 640 is the width of the image
+    float speed = std::max(0.1f, 1.0f - (radius / 100.0f)); // Speed control based on the size of the detected circle
+
+    opendlv::proxy::GroundSteeringRequest gsr;
+    gsr.groundSteering(steeringAngle);
+    od4.send(gsr);
+
+    opendlv::proxy::PedalPositionRequest ppr;
+    ppr.position(speed);
+    od4.send(ppr);
+}
 
 int32_t main(int32_t argc, char **argv)
 {
@@ -125,7 +137,7 @@ int32_t main(int32_t argc, char **argv)
       // tutorial said to blur to avoid extra circles, not sure if needed
       //cv::medianBlur(gray, gray, 5);
 
-
+      std::vector<cv::Vec3f> circles;
       kiwiDetector.houghCircles(grayimg, circles);
       //std::cout << "nr of circles detected: " << circles.size() << std::endl;
 
@@ -146,6 +158,25 @@ int32_t main(int32_t argc, char **argv)
           }
         }
       }
+      for (const auto &circle : circles) {
+            cv::Point center(cvRound(circle[0]), cvRound(circle[1]));
+            int radius = cvRound(circle[2]);
+            followTarget(center, radius, od4);
+        }
+
+        if (cmd.count("verbose")) {
+            for (const auto &circle : circles) {
+                cv::Point center(cvRound(circle[0]), cvRound(circle[1]));
+                int radius = cvRound(circle[2]);
+                cv::circle(img, center, 3, cv::Scalar(0, 255, 0), -1);
+                cv::circle(img, center, radius, cv::Scalar(0, 0, 255), 3);
+            }
+            cv::imshow("Detected Kiwis", img);
+            cv::waitKey(10);
+        }
+    }
+    return 0;
+}
 
       // draw the circles
       for( size_t i = 0; i < circles.size(); i++ )
