@@ -24,17 +24,20 @@ void KiwiDetector::houghCircles(cv::Mat &grayscale, std::vector<cv::Vec3f> &circ
 
 }
 
-void followTarget(const cv::Point &center, int radius, cluon::OD4Session &od4) {
-    float steeringAngle = (center.x - 320.0f) * 0.005; // Assuming 640 is the width of the image
+void followTarget(cv::Point2f &center, float radius, cluon::OD4Session &od4)
+{
+    float steeringAngle = (center.x - 320.0f) * 0.005f; // Assuming 640 is the width of the image
     float speed = std::max(0.1f, 1.0f - (radius / 100.0f)); // Speed control based on the size of the detected circle
 
     opendlv::proxy::GroundSteeringRequest gsr;
     gsr.groundSteering(steeringAngle);
     od4.send(gsr);
+    std::cout << "Angle request: " << gsr.groundSteering() << std::endl;
 
     opendlv::proxy::PedalPositionRequest ppr;
     ppr.position(speed);
     od4.send(ppr);
+    std::cout << "Speed request: " << ppr.position() << std::endl;
 }
 
 int32_t main(int32_t argc, char **argv)
@@ -114,9 +117,10 @@ int32_t main(int32_t argc, char **argv)
       kiwiDetector.houghCircles(grayimg, circles);
       //std::cout << "nr of circles detected: " << circles.size() << std::endl;
 
+      //move towards the first detected circle
       if(circles.size() > 0) {
-            cv::Point center(cvRound(circle[0][0]), cvRound(circle[0][1]));
-            int radius = cvRound(circle[0][2]);
+            cv::Point2f center(static_cast<float>(circles[0][0]), static_cast<float>(circles[0][1]));
+            float radius = static_cast<float>(circles[0][2]);
             followTarget(center, radius, od4);
         }
       // draw the circles if verbose
@@ -130,6 +134,8 @@ int32_t main(int32_t argc, char **argv)
           cv::imshow("Detected Kiwis", img);
           cv::waitKey(10);
         }
+        circles.clear();
     }
+  }
     return 0;
 }

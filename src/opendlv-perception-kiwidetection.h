@@ -19,10 +19,9 @@ public:
                                                             m_minRadius{static_cast<uint32_t>(std::stoi(cmd["minRadius"]))}, m_maxRadius{static_cast<uint32_t>(std::stoi(cmd["maxRadius"]))}
     {
     }
-
-    // void cannyEdge(cv::Mat &image, cv::Mat &cannyImage) const;
-    // void findContours(cv::Mat &image, std::vector<std::vector<cv::Point>> &contours) const;
+    
     void houghCircles(cv::Mat &image, std::vector<cv::Vec3f> &circles) const;
+    void followTarget(cv::Point &center, float radius, cluon::OD4Session &od4) const;
 
     // Getters
     inline int32_t getFormat() const { return m_format; };
