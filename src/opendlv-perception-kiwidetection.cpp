@@ -25,7 +25,7 @@ void KiwiDetector::houghCircles(cv::Mat &grayscale, std::vector<cv::Vec3f> &circ
 }
 
 // angle is wrong direction
-void followTarget(cv::Point2f &center, float radius, cluon::OD4Session &od4)
+void KiwiDetector::followTarget(cv::Point2f &center, float radius, cluon::OD4Session &od4) const
 {
     // float steeringAngle = (center.x - 320.0f) * 0.005f; // Assuming 640 is the width of the image
     // float steeringAngle = (m_width/2 - center.x)*0.005f;
@@ -41,6 +41,20 @@ void followTarget(cv::Point2f &center, float radius, cluon::OD4Session &od4)
     ppr.position(speed);
     od4.send(ppr);
     std::cout << "Speed request: " << ppr.position() << std::endl;
+}
+
+void KiwiDetector::lookAround() const
+{
+  
+  // turn angle = 19 deg
+  opendlv::proxy::GroundSteeringRequest gsr;
+  gsr.groundSteering(0.33f);
+  od4.send(gsr);
+
+  // speed = 0.5
+  opendlv::proxy::PedalPositionRequest ppr;
+  ppr.position(0.5f);
+  od4.send(ppr);
 }
 
 int32_t main(int32_t argc, char **argv)
@@ -89,6 +103,9 @@ int32_t main(int32_t argc, char **argv)
 
     cv::Mat grayimg;
     std::vector<cv::Vec3f> circles; //circle coords (x, y, radius) floats
+    uint32_t framesSinceDetection = 0;
+    std::vector<cv::Vec3f> lastDetection;
+
 
     // Endless loop; end the program by pressing Ctrl-C.
     // TODO: move towards circle coodinates
@@ -124,8 +141,25 @@ int32_t main(int32_t argc, char **argv)
       if(circles.size() > 0) {
             cv::Point2f center(static_cast<float>(circles[0][0]), static_cast<float>(circles[0][1]));
             float radius = static_cast<float>(circles[0][2]);
-            followTarget(center, radius, od4);
+            kiwiDetector.followTarget(center, radius, od4);
+
+            // save the last detection
+            lastDetection = 
+
+
+
+            framesSinceDetection = 0;
         }
+      else if (framesSinceDetection > 20)
+      {
+        // car lost, look around
+        kiwiDetector.lookAround();
+      }
+      else{
+        // move towards last detection
+
+        framesSinceDetection++;
+      }
       // draw the circles if verbose
       if (kiwiDetector.getVerbose()) {
           for (const auto &circle : circles) {
