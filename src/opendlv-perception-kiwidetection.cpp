@@ -24,10 +24,13 @@ void KiwiDetector::houghCircles(cv::Mat &grayscale, std::vector<cv::Vec3f> &circ
 
 }
 
+// angle is wrong direction
 void followTarget(cv::Point2f &center, float radius, cluon::OD4Session &od4)
 {
-    float steeringAngle = (center.x - 320.0f) * 0.005f; // Assuming 640 is the width of the image
-    float speed = std::max(0.1f, 1.0f - (radius / 100.0f)); // Speed control based on the size of the detected circle
+    // float steeringAngle = (center.x - 320.0f) * 0.005f; // Assuming 640 is the width of the image
+    // float steeringAngle = (m_width/2 - center.x)*0.005f;
+    float steeringAngle = std::atan((m_width / 2 - center.x) / (m_height - center.y));
+    float speed = std::max(0.5f, 0.5f - (radius / 100.0f)); // Speed control based on the size of the detected circle
 
     opendlv::proxy::GroundSteeringRequest gsr;
     gsr.groundSteering(steeringAngle);
