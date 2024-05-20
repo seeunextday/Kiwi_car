@@ -43,7 +43,7 @@ void KiwiDetector::followTarget(cv::Point2f &center, float radius, cluon::OD4Ses
     std::cout << "Speed request: " << ppr.position() << std::endl;
 }
 
-void KiwiDetector::lookAround() const
+void KiwiDetector::lookAround(cluon::OD4Session &od4) const
 {
   
   // turn angle = 19 deg
@@ -103,8 +103,9 @@ int32_t main(int32_t argc, char **argv)
 
     cv::Mat grayimg;
     std::vector<cv::Vec3f> circles; //circle coords (x, y, radius) floats
-    uint32_t framesSinceDetection = 0;
+    
     std::vector<cv::Vec3f> lastDetection;
+    uint32_t framesSinceDetection = 0;
 
 
     // Endless loop; end the program by pressing Ctrl-C.
@@ -138,28 +139,43 @@ int32_t main(int32_t argc, char **argv)
       //std::cout << "nr of circles detected: " << circles.size() << std::endl;
 
       //move towards the first detected circle
-      if(circles.size() > 0) {
-            cv::Point2f center(static_cast<float>(circles[0][0]), static_cast<float>(circles[0][1]));
-            float radius = static_cast<float>(circles[0][2]);
-            kiwiDetector.followTarget(center, radius, od4);
+      if (circles.size() > 0) {
+    
+         lastDetection = circles;
+        framesSinceDetection = 0;
 
-            // save the last detection
-            lastDetection = 
+  
+        cv::Point2f center(static_cast<float>(circles[0][0]), static_cast<float>(circles[0][1]));
+        float radius = static_cast<float>(circles[0][2]);
 
-
-
-            framesSinceDetection = 0;
-        }
-      else if (framesSinceDetection > 20)
-      {
-        // car lost, look around
-        kiwiDetector.lookAround();
-      }
-      else{
-        // move towards last detection
-
+  
+        kiwiDetector.followTarget(center, radius, od4);
+      } else {
+   
         framesSinceDetection++;
-      }
+
+
+        if (framesSinceDetection > 20 && !lastDetection.empty()) {
+          for(const auto& circle : lastDetection) {
+              std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
+          }
+        
+            cv::Point2f center(static_cast<float>(lastDetection[0][0]), static_cast<float>(lastDetection[0][1]));
+            float radius = static_cast<float>(lastDetection[0][2]);
+            kiwiDetector.followTarget(center, radius, od4);
+        } else if (framesSinceDetection <= 20) {
+        
+            if (!lastDetection.empty()) {
+               cv::Point2f center(static_cast<float>(lastDetection[0][0]), static_cast<float>(lastDetection[0][1]));
+               float radius = static_cast<float>(lastDetection[0][2]);
+              kiwiDetector.followTarget(center, radius, od4);
+           }
+        } else {
+        
+            kiwiDetector.lookAround(od4);
+         }
+  }
+
       // draw the circles if verbose
       if (kiwiDetector.getVerbose()) {
           for (const auto &circle : circles) {
