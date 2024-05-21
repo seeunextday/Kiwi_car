@@ -151,26 +151,28 @@ int32_t main(int32_t argc, char **argv)
   
         kiwiDetector.followTarget(center, radius, od4);
       } else {
-   
+    
         framesSinceDetection++;
 
 
-        if (framesSinceDetection > 20 && !lastDetection.empty()) {
-          for(const auto& circle : lastDetection) {
-              std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
-          }
+        if (framesSinceDetection > 40 && !lastDetection.empty()) {
+          // for(const auto& circle : lastDetection) {
+          //     std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
+          // }
         
-            cv::Point2f center(static_cast<float>(lastDetection[0][0]), static_cast<float>(lastDetection[0][1]));
-            float radius = static_cast<float>(lastDetection[0][2]);
-            kiwiDetector.followTarget(center, radius, od4);
-        } else if (framesSinceDetection <= 20) {
-        
-            if (!lastDetection.empty()) {
+            // cv::Point2f center(static_cast<float>(lastDetection[0][0]), static_cast<float>(lastDetection[0][1]));
+            // float radius = static_cast<float>(lastDetection[0][2]);
+            // kiwiDetector.followTarget(center, radius, od4);
+            kiwiDetector.lookAround(od4);
+        } else if (framesSinceDetection <= 40 && !lastDetection.empty())  {
+              for(const auto& circle : lastDetection) {
+                  std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
+                  }
                cv::Point2f center(static_cast<float>(lastDetection[0][0]), static_cast<float>(lastDetection[0][1]));
                float radius = static_cast<float>(lastDetection[0][2]);
               kiwiDetector.followTarget(center, radius, od4);
            }
-        } else {
+         else {
         
             kiwiDetector.lookAround(od4);
          }
