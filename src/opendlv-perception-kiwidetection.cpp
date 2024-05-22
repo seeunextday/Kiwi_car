@@ -43,13 +43,32 @@ void KiwiDetector::followTarget(cv::Point2f &center, float radius, cluon::OD4Ses
     std::cout << "Speed request: " << ppr.position() << std::endl;
 }
 
-void KiwiDetector::lookAround(cluon::OD4Session &od4) const
+void KiwiDetector::lookAroundLeft(cluon::OD4Session &od4) const
 {
   
   // turn angle = 19 deg
+  
   opendlv::proxy::GroundSteeringRequest gsr;
   gsr.groundSteering(0.33f);
   od4.send(gsr);
+
+
+  // speed = 0.5
+  opendlv::proxy::PedalPositionRequest ppr;
+  ppr.position(0.5f);
+  od4.send(ppr);
+}
+
+
+void KiwiDetector::lookAroundRight(cluon::OD4Session &od4) const
+{
+  
+  // turn angle = 19 deg
+  
+  opendlv::proxy::GroundSteeringRequest gsr;
+  gsr.groundSteering(-0.33f);
+  od4.send(gsr);
+
 
   // speed = 0.5
   opendlv::proxy::PedalPositionRequest ppr;
@@ -155,7 +174,10 @@ int32_t main(int32_t argc, char **argv)
           // for(const auto& circle : lastDetection) {
           //     std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
           // }
-          kiwiDetector.lookAround(od4);
+          kiwiDetector.lookAroundLeft(od4);
+          if (framesSinceDetection > 50 && !lastDetection.empty()) {
+            kiwiDetector.lookAroundRight(od4);
+          }
         } else if (framesSinceDetection <= 40 && !lastDetection.empty())  {
           // if <40 empty frames, follow last detection
           for(const auto& circle : lastDetection) {
@@ -166,7 +188,9 @@ int32_t main(int32_t argc, char **argv)
           kiwiDetector.followTarget(center, radius, od4);
         } else {
           // initial look around
-          kiwiDetector.lookAround(od4);
+          kiwiDetector.lookAroundLeft(od4);
+          if (framesSinceDetection > 10) {
+            kiwiDetector.lookAroundRight(od4);
         }
      }
 
@@ -186,4 +210,5 @@ int32_t main(int32_t argc, char **argv)
     }
   }
     return 0;
+}
 }

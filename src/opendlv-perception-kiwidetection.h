@@ -22,7 +22,8 @@ public:
     
     void houghCircles(cv::Mat &image, std::vector<cv::Vec3f> &circles) const;
     void followTarget(cv::Point2f &center, float radius, cluon::OD4Session &od4) const;
-    void lookAround(cluon::OD4Session &od4) const;
+    void lookAroundLeft(cluon::OD4Session &od4) const;
+    void lookAroundRight(cluon::OD4Session &od4) const;
 
     // Getters
     inline int32_t getFormat() const { return m_format; };
