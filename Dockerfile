@@ -39,4 +39,4 @@ RUN apt-get install -y \
 
 WORKDIR /usr/bin
 COPY --from=builder /tmp/dest /usr
-ENTRYPOINT ["/usr/bin/opendlv-control-papersteering"]
+ENTRYPOINT ["/usr/bin/opendlv-control-kiwifollowing"]
