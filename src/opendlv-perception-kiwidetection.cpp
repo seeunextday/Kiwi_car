@@ -30,8 +30,15 @@ void KiwiDetector::followTarget(cv::Point2f &center, float radius, cluon::OD4Ses
     // float steeringAngle = (center.x - 320.0f) * 0.005f; // Assuming 640 is the width of the image
     // float steeringAngle = (m_width/2 - center.x)*0.005f;
     float steeringAngle = std::atan((m_width / 2 - center.x) / (m_height - center.y));
-    float speed = std::max(0.45f, 0.45f - (radius / 100.0f)); // Speed control based on the size of the detected circle
-
+    float speed = 0.0f; //define speed
+    
+    if (radius < 13) {
+        speed = (0.55f - (radius / 100.0f)); // Speed control based on the size of the detected circle
+    }
+    if (radius >= 13) {
+        speed = (0.5f - (radius / 100.0f)); // Speed control based on the size of the detected circle
+    }
+    
     opendlv::proxy::GroundSteeringRequest gsr;
     gsr.groundSteering(steeringAngle);
     od4.send(gsr);
@@ -55,7 +62,7 @@ void KiwiDetector::lookAroundLeft(cluon::OD4Session &od4) const
 
   // speed = 0.5
   opendlv::proxy::PedalPositionRequest ppr;
-  ppr.position(0.45f);
+  ppr.position(0.5f);
   od4.send(ppr);
 }
 
@@ -72,9 +79,10 @@ void KiwiDetector::lookAroundRight(cluon::OD4Session &od4) const
 
   // speed = 0.5
   opendlv::proxy::PedalPositionRequest ppr;
-  ppr.position(0.45f);
+  ppr.position(0.5f);
   od4.send(ppr);
 }
+
 
 int32_t main(int32_t argc, char **argv)
 {
@@ -171,11 +179,11 @@ int32_t main(int32_t argc, char **argv)
 
         // if 40 frames without detection, car is lost
         if (framesSinceDetection > 40 && !lastDetection.empty()) {
-          // for(const auto& circle : lastDetection) {
-          //     std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
-          // }
+          for(const auto& circle : lastDetection) {
+              std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
+          }
           kiwiDetector.lookAroundLeft(od4);
-          if (framesSinceDetection > 50 && !lastDetection.empty()) {
+          if (framesSinceDetection > 55 && !lastDetection.empty()) {
             kiwiDetector.lookAroundRight(od4);
           }
         } else if (framesSinceDetection <= 40 && !lastDetection.empty())  {
@@ -190,6 +198,7 @@ int32_t main(int32_t argc, char **argv)
           // initial look around
           kiwiDetector.lookAroundLeft(od4);
         }
+     }
 
       // draw the circles if verbose
       if (kiwiDetector.getVerbose()) {
@@ -207,5 +216,4 @@ int32_t main(int32_t argc, char **argv)
     }
   }
     return 0;
-}
 }
