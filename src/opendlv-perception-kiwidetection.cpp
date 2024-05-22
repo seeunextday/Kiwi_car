@@ -30,7 +30,7 @@ void KiwiDetector::followTarget(cv::Point2f &center, float radius, cluon::OD4Ses
     // float steeringAngle = (center.x - 320.0f) * 0.005f; // Assuming 640 is the width of the image
     // float steeringAngle = (m_width/2 - center.x)*0.005f;
     float steeringAngle = std::atan((m_width / 2 - center.x) / (m_height - center.y));
-    float speed = std::max(0.3f, 0.3f - (radius / 100.0f)); // Speed control based on the size of the detected circle
+    float speed = std::max(0.45f, 0.45f - (radius / 100.0f)); // Speed control based on the size of the detected circle
 
     opendlv::proxy::GroundSteeringRequest gsr;
     gsr.groundSteering(steeringAngle);
@@ -55,7 +55,7 @@ void KiwiDetector::lookAroundLeft(cluon::OD4Session &od4) const
 
   // speed = 0.5
   opendlv::proxy::PedalPositionRequest ppr;
-  ppr.position(0.3f);
+  ppr.position(0.45f);
   od4.send(ppr);
 }
 
@@ -72,7 +72,7 @@ void KiwiDetector::lookAroundRight(cluon::OD4Session &od4) const
 
   // speed = 0.5
   opendlv::proxy::PedalPositionRequest ppr;
-  ppr.position(0.3f);
+  ppr.position(0.45f);
   od4.send(ppr);
 }
 
