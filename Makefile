@@ -14,4 +14,4 @@ dirs: $(SRC) $(INC)
 	cd build && make
 	
 run:
-	./build/opendlv-control-kiwifollowing --cid=111 --verbose
+	./build/opendlv-control-kiwifollowing --cid=111 --verbose --pedal-position=0.6 --width=640 --height=480

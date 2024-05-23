@@ -24,29 +24,33 @@ int32_t main(int32_t argc, char **argv)
     // Interface to a running OD4 session; here, you can send and receive messages.
     cluon::OD4Session od4{static_cast<uint16_t>(std::stoi(cmd["cid"]))};
     // uint16_t const cid = std::stoi(cmd.at("cid"));
-    bool const verbose = (cmd.count("verbose") != 0);
 
+    bool const verbose = (cmd.count("verbose") != 0);
+    uint32_t const imageWidth{static_cast<uint32_t>(std::stoi(cmd["width"]))};
+    uint32_t const imageHeight{static_cast<uint32_t>(std::stoi(cmd["height"]))};
+    float const pedalPosition{static_cast<float>(std::stoi(cmd["pedal-position"]))};
+    
     std::mutex directionMutex;
     float detectionAzimuthAngle;
     auto onDetectionDirection{[&verbose, &detectionAzimuthAngle, &directionMutex](cluon::data::Envelope &&envelope) {
-      auto const dd =
+      auto const dir =
           cluon::extractMessage<opendlv::logic::perception::DetectionDirection>(
               std::move(envelope));
 
       std::lock_guard<std::mutex> lck(directionMutex);
-      detectionAzimuthAngle =  dd.azimuthAngle();
+      detectionAzimuthAngle =  dir.azimuthAngle();
     }};
     od4.dataTrigger(opendlv::logic::perception::DetectionDirection::ID(), onDetectionDirection);
 
     std::mutex detectionDistanceMutex;
     float detectionDistance;
     auto onDetectionDistance{[&verbose, &detectionDistanceMutex, &detectionDistance](cluon::data::Envelope &&envelope) {
-      auto const dd = 
+      auto const dist = 
           cluon::extractMessage<opendlv::logic::perception::DetectionDistance>(
               std::move(envelope));
 
       std::lock_guard<std::mutex> lck(detectionDistanceMutex);
-      detectionDistance = dd.distance();
+      detectionDistance = dist.distance();
     }};
     od4.dataTrigger(opendlv::logic::perception::DetectionDistance::ID(), onDetectionDistance);
 
@@ -56,15 +60,18 @@ int32_t main(int32_t argc, char **argv)
       groundSteeringRequest.groundSteering(detectionAzimuthAngle);
       od4.send(groundSteeringRequest);
 
-      if (detectionDistance > .75){
-        opendlv::proxy::PedalPositionRequest ppr;
-        ppr.position(.0); // TEST
-        od4.send(ppr);
-      } else {
-        opendlv::proxy::PedalPositionRequest ppr;
-        ppr.position(float(.01)); // TEST
-        od4.send(ppr);
+      opendlv::proxy::PedalPositionRequest ppr;
+
+      if (detectionDistance > 18){
+        ppr = 0.0f; // if car is too close, stop
       }
+      if (detectionDistance > 13) {
+        ppr = (0.6f - (detectionDistance / 100.0f)); // Speed control based on the size of the detected circle
+      }
+      else {
+        ppr = 0.6f; // Speed control based on the size of the detected circle
+      }
+      od4.send(ppr);
     }
     retCode = 0;
   }
