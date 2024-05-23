@@ -24,21 +24,21 @@ void KiwiDetector::houghCircles(cv::Mat &grayscale, std::vector<cv::Vec3f> &circ
 
 }
 
-// angle is wrong direction
 void KiwiDetector::followTarget(cv::Point2f &center, float radius, cluon::OD4Session &od4) const
 {
-    // float steeringAngle = (center.x - 320.0f) * 0.005f; // Assuming 640 is the width of the image
-    // float steeringAngle = (m_width/2 - center.x)*0.005f;
     float steeringAngle = std::atan((m_width / 2 - center.x) / (m_height - center.y));
-    float speed = 0.0f; //define speed
-    
-    if (radius < 13) {
-        speed = (0.55f - (radius / 100.0f)); // Speed control based on the size of the detected circle
+    float speed = 0.0f;
+
+    if (radius > 18){
+      speed = 0.0f; // if car is too close, stop
     }
-    if (radius >= 13) {
-        speed = (0.5f - (radius / 100.0f)); // Speed control based on the size of the detected circle
+    if (radius > 13) {
+        speed = (0.6f - (radius / 100.0f)); // Speed control based on the size of the detected circle
     }
-    
+    else {
+        speed = 0.6f; // Speed control based on the size of the detected circle
+    }
+
     opendlv::proxy::GroundSteeringRequest gsr;
     gsr.groundSteering(steeringAngle);
     od4.send(gsr);
@@ -179,20 +179,24 @@ int32_t main(int32_t argc, char **argv)
 
         // if 40 frames without detection, car is lost
         if (framesSinceDetection > 40 && !lastDetection.empty()) {
-          for(const auto& circle : lastDetection) {
-              std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
-          }
+          // for(const auto& circle : lastDetection) {
+          //     std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
+          // }
+          std::cout << "Last detection: " << lastDetection[0] << std::endl;
           kiwiDetector.lookAroundLeft(od4);
-          if (framesSinceDetection > 55 && !lastDetection.empty()) {
-            kiwiDetector.lookAroundRight(od4);
-          }
+          // if (framesSinceDetection > 55 && !lastDetection.empty()) {
+          //   kiwiDetector.lookAroundRight(od4);
+          // }
         } else if (framesSinceDetection <= 40 && !lastDetection.empty())  {
           // if <40 empty frames, follow last detection
-          for(const auto& circle : lastDetection) {
-              std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
-              }
-            cv::Point2f center(static_cast<float>(lastDetection[0][0]), static_cast<float>(lastDetection[0][1]));
-            float radius = static_cast<float>(lastDetection[0][2]);
+          
+          // for(const auto& circle : lastDetection) {
+          //     std::cout << "Last detection: " << circle[0] << " " << circle[1] << " " << circle[2] << std::endl;
+          //     }
+          std::cout << "Last detection: " << lastDetection[0] << std::endl;
+          
+          cv::Point2f center(static_cast<float>(lastDetection[0][0]), static_cast<float>(lastDetection[0][1]));
+          float radius = static_cast<float>(lastDetection[0][2]);
           kiwiDetector.followTarget(center, radius, od4);
         } else {
           // initial look around
